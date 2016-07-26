@@ -67,7 +67,7 @@ Properties are added and changed in `${CHE_LOCAL_CONF_DIR}/che.properties`
 On Linux, a firewall may block inbound connections from within Docker containers to your localhost network. As a result, the workspace agent is unable to ping the Che server. You can check for the firewall and then disable it.
 
 [Shell](https://eclipse-che.readme.io/v4.4/docs/che-as-a-server)
-```bash
+``` bash
 # Check firewall status
 sudo ufw status
 
@@ -101,9 +101,9 @@ On Windows and Mac, the default configuration of the Che startup scripts:
 ### *Che Connections*
 |	\>>>>>>Connection>>>>>>	|	Windows / Mac with VM	|
 |	:---	|	:---	|
-|	Che_Server => Docker_Daemon	|	<ul/> 1. Use the value of `docker.client.daemon_url`. <br/><br/> 2. Else use the `DOCKER_HOST` environment variable. If `DOCKER_HOST` value is malformed, catch `URISyntaxException` and use the default `https://192.168.99.100:2376`.<br/><br/> 3. Else uses default value: `https://192.168.99.100:2376`	|
-|	Che_Server => Workspace<br/><br/>Browser => Workspace	|	<ul /> 1. Use the value of `machine.docker.local_node_host`. <br/><br/> 2. Else if there is `CHE_DOCKER_MACHINE_HOST` use the provided value Else get value retrieved from URI that Che server uses to connect to Docker (`DOCKER_HOST`). <br/><br/> 3. Else if `DOCKER_HOST` has not been exported, then return IP address of VM running Docker.	|
-|	Workspace_Agent --> Che_Server	|	There's a mandatory property machine.docker.che_api.endpoint with a default value of `http://che-host:${SERVER_PORT}/wsmaster/api`. You can override `che-host` with your own IP address that points to the Che server. <ul/> <br/><br/> 1. If `che-host` is not overridden, Che replaces `che-host` with the bridged IP address of the VM IP (using `DOCKER_HOST` environment variable). <br/><br/> 2. If this bridged IP is unavailable, then `che-host` is replaced with `192.168.99.1`. <br/><br/> 3. Else, if there is a failure, we will print an HTTP connection exception with the reason for the failure.	|
+|	`Che_Server => Docker_Daemon`	|	<ul/> 1. Use the value of `docker.client.daemon_url`. <br/><br/> 2. Else use the `DOCKER_HOST` environment variable. If `DOCKER_HOST` value is malformed, catch `URISyntaxException` and use the default `https://192.168.99.100:2376`.<br/><br/> 3. Else uses default value: `https://192.168.99.100:2376`	|
+|	`Che_Server => Workspace`<br/><br/>`Browser => Workspace`	|	<ul /> 1. Use the value of `machine.docker.local_node_host`. <br/><br/> 2. Else if there is `CHE_DOCKER_MACHINE_HOST` use the provided value Else get value retrieved from URI that Che server uses to connect to Docker (`DOCKER_HOST`). <br/><br/> 3. Else if `DOCKER_HOST` has not been exported, then return IP address of VM running Docker.	|
+|	`Workspace_Agent --> Che_Server`	|	There's a mandatory property machine.docker.che_api.endpoint with a default value of `http://che-host:${SERVER_PORT}/wsmaster/api`. You can override `che-host` with your own IP address that points to the Che server. <ul/> <br/><br/> 1. If `che-host` is not overridden, Che replaces `che-host` with the bridged IP address of the VM IP (using `DOCKER_HOST` environment variable). <br/><br/> 2. If this bridged IP is unavailable, then `che-host` is replaced with `192.168.99.1`. <br/><br/> 3. Else, if there is a failure, we will print an HTTP connection exception with the reason for the failure.	|
 |		|		|
 
 ## *Native Docker for Che, Native Docker for Workspaces*
