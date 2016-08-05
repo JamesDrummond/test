@@ -1,96 +1,122 @@
 <h2 id="configuration-networking">Configuration: Networking</h2>
-<h4 id="an-administrators-guide-to-configuring-che-in-various-networking-scenarios."><em>An administrator's guide to configuring Che in various networking scenarios.</em></h4>
-<table>
-<colgroup>
-<col width="13%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th align="left">Eclipse Che is making connections between three essential entities: the browser, the Che server, and a machine which is typically running a Docker container. There are configuration steps that you must take if these services are distributed, or you want to run them on IP addresses that do not have external public access. Generally, if the browser client that is accessing Che and the workspaces that it are connecting to are both on <code>localhost</code>, then the Che startup scripts configure everything for the user. You will need to reconfigure Che with certain properties to support it running behind a firewall or in a hosted scenario. This guide is a companion to <a href="https://eclipse-che.readme.io/v4.4/docs/che-as-a-server">Configuration: Che as a Server</a> which walks through the items that you must configure step by step to verify Che operates in a hosted capacity. This networking guide is provided as a specification. This page is a companion to the: ## <em>Four Deployment Configurations</em> There are four basic configurations in which you can deploy Che. | Che? | Workspaces? | OS | Description | | :--- | :--- | :--- | :--- | | Native Process | Native Docker | Linux | The Che app server runs as a native process on your node. Workspaces are generated as Docker containers. The Docker daemon is running on the same node. The Che app server and Docker container may have different IP addresses on the same node.<br/><br/>The default settings of the Che boot scripts on Linux assume this configuration. | | Native Process | VM Docker | Any | Since Docker is not natively supported on many operating systems, you can launch a VM running a boot2docker ISO that provides an OS for Docker containers.<br/><br/>The Che app server runs as a native process on your node. Worskpaces are generated using Docker that is running inside a VM. There can be up to three IP addresses: the Che server, the VM, and the container.<br/><br/>The default settings of the Che boot scripts on Mac and Windows assume this configuration. | | Native Docker | Native Docker | Linux | You can run Che inside of a Docker container, which itself is independently started and stopped. The workspaces created by Che are created using the same Docker daemon and created as sibling containers. | | VM Docker | VM Docker | Any | Same as the previous configuration, but all Docker containers are created by the Docker daemon running within the VM. | ## <em>Native Process for Che, Native Docker for Workspaces</em></th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">This is a Linux-only configuration. The Che scripts on Linux assume that this is the default configuration and do not require any command-line parameters to launch Che with this configuration.</td>
-</tr>
-<tr class="even">
-<td align="left"><img src="https://files.readme.io/ZF7vFCWkRcmOKxL9mMCF_Capture.PNG" alt="Native Process for Che, Native Docker for Workspaces" /></td>
-</tr>
-<tr class="odd">
-<td align="left">The browser client initiates communication with the Che Server by connecting to <code>che-ip</code>. This IP address must be accessible by your browser clients. Internally, Che runs on Tomcat which is bound to port <code>8080</code>. This port can be altered by using the <code>--port:&lt;port&gt;</code> command line option.</td>
-</tr>
-<tr class="even">
-<td align="left">At some point, a user creates a workspace, which will have Che connect to the Docker daemon at <code>docker-ip</code> and has that daemon launch a machine. The machine is bound to a Docker container running on some Docker-configured IP address, <code>workspace-ip</code>. The <code>workspace-ip</code> must also be reachable by your browser host.</td>
-</tr>
-<tr class="odd">
-<td align="left">&gt; IP Reachability &gt;If your browser clients cannot connect to both <code>che-ip</code> and <code>workspace-ip</code>, then you get errors from your browser when they either first connect to Che, or after a new workspace has been created by Che and when the browser requests to open the IDE for that workspace. We provide helpful error messages within the dashboard and workspace if we think this connectivity issue may be occurring.</td>
-</tr>
-<tr class="even">
-<td align="left">### <em>PORTS</em> Inside of your workspace machine powered by Docker, Che launches and exposes an application server on port <code>4401</code> and <code>4403</code>. We also have our default Docker images configured to launch an SSH daemon on port <code>22</code>. The embedded JavaScript terminal which is reachable over Web sockets runs on port <code>4411</code>. Your custom stacks and images (configured in the dashboard) may expose additional services on different ports.</td>
-</tr>
-<tr class="odd">
-<td align="left">Docker uses ephemeral port mapping. The ports accessible to your clients start at port <code>32768</code> and go through a wide range. When we start services internal to Docker, they are mapped to one of these ports. It is these ports that the browser (or SSH) clients connect to, and would need to be opened if connecting through a firewall.</td>
-</tr>
-<tr class="even">
-<td align="left">Additionally, if your users start services within their workspace that expose their own ports, then those ports need to have an <code>EXPOSE &lt;port&gt;</code> command added to the workspace image Dockerfile. As a courtesy, we expose port <code>80</code> and <code>8080</code> within the container for any users that want to launch services on those ports.</td>
-</tr>
-<tr class="odd">
-<td align="left">### <em>DOCKER CONNECTION</em></td>
-</tr>
-</tbody>
-</table>
+<p>#### <em>An administrator's guide to configuring Che in various networking scenarios.</em></p>
+
+<hr />
+<p>Eclipse Che is making connections between three essential entities: the browser, the Che server, and a machine which is typically running a Docker container. There are configuration steps that you must take if these services are distributed, or you want to run them on IP addresses that do not have external public access.</p>
+
+<p>Generally, if the browser client that is accessing Che and the workspaces that it are connecting to are both on <code>localhost</code>, then the Che startup scripts configure everything for the user. You will need to reconfigure Che with certain properties to support it running behind a firewall or in a hosted scenario.</p>
+
+<p>This guide is a companion to <a href="https://eclipse-che.readme.io/v4.4/docs/che-as-a-server">Configuration: Che as a Server</a> which walks through the items that you must configure step by step to verify Che operates in a hosted capacity.</p>
+
+<p>This networking guide is provided as a specification. This page is a companion to the:</p>
+
+<h2 id="four-deployment-configurations"><em>Four Deployment Configurations</em></h2>
+<p>There are four basic configurations in which you can deploy Che.</p>
+
+<p>|	Che?	|	Workspaces?	|	OS	|	Description	|
+|	:---	|	:---	|	:---	|	:---	|
+|	Native Process	|	Native Docker	|	Linux	|	The Che app server runs as a native process on your node. Workspaces are generated as Docker containers. The Docker daemon is running on the same node. The Che app server and Docker container may have different IP addresses on the same node.<br /><br />The default settings of the Che boot scripts on Linux assume this configuration.	|
+|	Native Process	|	VM Docker	|	Any	|	Since Docker is not natively supported on many operating systems, you can launch a VM running a boot2docker ISO that provides an OS for Docker containers.<br /><br />The Che app server runs as a native process on your node. Worskpaces are generated using Docker that is running inside a VM. There can be up to three IP addresses: the Che server, the VM, and the container.<br /><br />The default settings of the Che boot scripts on Mac and Windows assume this configuration.	|
+|	Native Docker	|	Native Docker	|	Linux	|	You can run Che inside of a Docker container, which itself is independently started and stopped. The workspaces created by Che are created using the same Docker daemon and created as sibling containers.	|
+|	VM Docker	|	VM Docker	|	Any	|	Same as the previous configuration, but all Docker containers are created by the Docker daemon running within the VM.	|</p>
+
+<h2 id="native-process-for-che-native-docker-for-workspaces"><em>Native Process for Che, Native Docker for Workspaces</em></h2>
+
+<hr />
+<p>This is a Linux-only configuration. The Che scripts on Linux assume that this is the default configuration and do not require any command-line parameters to launch Che with this configuration.</p>
+
+<p><img src="https://files.readme.io/ZF7vFCWkRcmOKxL9mMCF_Capture.PNG" alt="Native Process for Che, Native Docker for Workspaces" /></p>
+
+<p>The browser client initiates communication with the Che Server by connecting to <code>che-ip</code>. This IP address must be accessible by your browser clients. Internally, Che runs on Tomcat which is bound to port <code>8080</code>. This port can be altered by using the <code>--port:&lt;port&gt;</code> command line option.</p>
+
+<p>At some point, a user creates a workspace, which will have Che connect to the Docker daemon at <code>docker-ip</code> and has that daemon launch a machine. The machine is bound to a Docker container running on some Docker-configured IP address, <code>workspace-ip</code>. The <code>workspace-ip</code> must also be reachable by your browser host.</p>
+
+<blockquote>
+  <p>IP Reachability
+If your browser clients cannot connect to both <code>che-ip</code> and <code>workspace-ip</code>, then you get errors from your browser when they either first connect to Che, or after a new workspace has been created by Che and when the browser requests to open the IDE for that workspace. We provide helpful error messages within the dashboard and workspace if we think this connectivity issue may be occurring.</p>
+</blockquote>
+
+<h3 id="ports"><em>PORTS</em></h3>
+<p>Inside of your workspace machine powered by Docker, Che launches and exposes an application server on port <code>4401</code> and <code>4403</code>. We also have our default Docker images configured to launch an SSH daemon on port <code>22</code>. The embedded JavaScript terminal which is reachable over Web sockets runs on port <code>4411</code>. Your custom stacks and images (configured in the dashboard) may expose additional services on different ports.</p>
+
+<p>Docker uses ephemeral port mapping. The ports accessible to your clients start at port <code>32768</code> and go through a wide range. When we start services internal to Docker, they are mapped to one of these ports. It is these ports that the browser (or SSH) clients connect to, and would need to be opened if connecting through a firewall.</p>
+
+<p>Additionally, if your users start services within their workspace that expose their own ports, then those ports need to have an <code>EXPOSE &lt;port&gt;</code> command added to the workspace image Dockerfile. As a courtesy, we expose port <code>80</code> and <code>8080</code> within the container for any users that want to launch services on those ports.</p>
+
+<h3 id="docker-connection"><em>DOCKER CONNECTION</em></h3>
+
+<hr />
 <p>There are multiple techniques for connecting to Docker including Unix sockets, localhost, and remote connections over TCP protocol. Depending upon the type of connection you require and the location of the machine node running Docker, we use different parameters.</p>
+
 <h4 id="che-connections"><em>Che Connections</em></h4>
-<p>  &gt;&gt;&gt;&gt;&gt;&gt;Connection&gt;&gt;&gt;&gt;&gt;&gt; | Linux |<br />  :--- | :--- |<br />  <code>Che Server =&gt; Docker Daemon</code> |<br />  <code>Che Server =&gt; Workspace</code> <br/><br/> <code>Browser =&gt; Workspace</code> |<br />  <code>Workspace Agent =&gt; Che Server</code> | There's a mandatory property <code>machine.docker.che_api.endpoint</code> with a default value of <code>http://che-host:${SERVER_PORT}/wsmaster/api</code>. You can override <code>che-host</code> with your own IP address that points to the Che server.</p>
+
+<p>|	&gt;&gt;&gt;&gt;&gt;&gt;Connection&gt;&gt;&gt;&gt;&gt;&gt;	|	Linux	|
+|	:---	|	:---	|
+|	<code>Che Server =&gt; Docker Daemon</code>	|	&lt;ul&gt; 1. Use the value of <code>docker.client.daemon_url</code>. <br /><br /> 2. Else use the value of <code>DOCKER_HOST</code> environment variable. If <code>DOCKER_HOST</code> value is malformed, Che falls back to<code>unix:///var/run/docker.sock</code>. <br /><br /> 3. Else use Unix socket: <code>unix:///var/run/docker.sock</code>	|
+|	<code>Che Server =&gt; Workspace</code> <br /><br /> <code>Browser =&gt; Workspace</code>	|	&lt;ul&gt; 1. Use the value of <code>machine.docker.local_node_host</code>.  <br /><br /> 2. Else use the value of <code>CHE_DOCKER_MACHINE_HOST</code> environment variable. <br /><br /> 3. Else if server connects to Docker via Unix socket then use <code>localhost</code>.  <br /><br /> 4. Else get value retrieved from URI that Che server uses to connect to Docker (<code>DOCKER_HOST</code>).	|
+|	<code>Workspace Agent =&gt; Che Server	</code> |	There's a mandatory property <code>machine.docker.che_api.endpoint</code> with a default value of <code>http://che-host:${SERVER_PORT}/wsmaster/api</code>. You can override <code>che-host</code> with your own IP address that points to the Che server.&lt;ul&gt; <br /><br /> &lt;li&gt; 1. If <code>che-host</code> is not overridden, Che replaces <code>che-host</code> with the IP of <code>docker0</code> network interface. <br /><br /> 2. If <code>docker0</code> IP is unreachable, then <code>che-host</code> is replaced with <code>172.17.42.1</code>. <br /><br /> 3. Else, if there is a failure, we will print an HTTP connection exception with the reason for the failure. &lt;/ul&gt;	|</p>
+
 <p>You can set the <code>CHE_DOCKER_MACHINE_HOST</code> environment variable by exporting the variable in your Linux configuration or on the Che command line with <code>--remote:ip</code> option.</p>
+
 <p>Properties are added and changed in <code>${CHE_LOCAL_CONF_DIR}/che.properties</code></p>
+
 <h4 id="firewall"><em>Firewall</em></h4>
 <p>On Linux, a firewall may block inbound connections from within Docker containers to your localhost network. As a result, the workspace agent is unable to ping the Che server. You can check for the firewall and then disable it.</p>
-<p><a href="https://eclipse-che.readme.io/v4.4/docs/che-as-a-server">Shell</a></p>
-<pre class="sourceCode bash"><code class="sourceCode bash"><span class="co"># Check firewall status</span>
-<span class="kw">sudo</span> ufw status
 
-<span class="co"># Disable firewall</span>
-<span class="kw">sudo</span> ufw disable
+<p><a href="https://eclipse-che.readme.io/v4.4/docs/che-as-a-server">Shell</a>
+``` bash
+# Check firewall status
+sudo ufw status</p>
 
-<span class="co"># Allow 8080 port of Che server</span>
-<span class="kw">sudo</span> ufw allow 8080/tcp</code></pre>
+<h1 id="disable-firewall">Disable firewall</h1>
+<p>sudo ufw disable</p>
+
+<h1 id="allow-8080-port-of-che-server">Allow 8080 port of Che server</h1>
+<p>sudo ufw allow 8080/tcp
+```</p>
+
 <h2 id="native-process-for-che-vm-docker-for-workspaces"><em>Native Process for Che, VM Docker for Workspaces</em></h2>
+
 <hr />
+
 <p>You can run Docker in a VM and enable Che to create workspaces using the embedded Docker daemon. If you are on Linux, this is optional. If you are on OSX or Windows, this is mandatory as Docker is not yet supported natively on those operating systems. We use VirtualBox to launch and manage VMs that run a special operating system optimized for executing Docker containers. This VM type is called <code>boot2docker</code> and it is maintained by the Docker community. <code>docker-machine</code> is a command line utility to simplify the creation and destruction of VMs that have <code>boot2docker</code>.</p>
-<div class="figure">
-<img src="https://files.readme.io/PqblnAS2S4GOVu8vy6oJ_Capture.PNG" alt="Native Process for Che, VM Docker for Workspaces" /><p class="caption">Native Process for Che, VM Docker for Workspaces</p>
-</div>
+
+<p><img src="https://files.readme.io/PqblnAS2S4GOVu8vy6oJ_Capture.PNG" alt="Native Process for Che, VM Docker for Workspaces" /></p>
+
 <p>This configuration introduces a third IP addresses, <code>vm-ip</code>, which is the externally accessible IP address of the VM that has the Docker daemon. Your browser clients communicate to <code>vm-ip</code> in this configuration, not <code>workspace-ip</code>.</p>
+
 <p>On Windows and Mac, the default configuration of the Che startup scripts:</p>
-<ol style="list-style-type: decimal">
-<li>Uses <code>docker-machine</code> to create a VM named <code>default</code>.</li>
-<li>Sets the <code>vm-ip</code> to your environment variables.</li>
-<li>Launches Che with <code>CHE_DOCKER_MACHINE_HOST</code> set to <code>vm-ip</code>.</li>
+
+<ol>
+  <li>Uses <code>docker-machine</code> to create a VM named <code>default</code>.</li>
+  <li>Sets the <code>vm-ip</code> to your environment variables.</li>
+  <li>Launches Che with <code>CHE_DOCKER_MACHINE_HOST</code> set to <code>vm-ip</code>.</li>
 </ol>
+
 <h4 id="che-connections-1"><em>Che Connections</em></h4>
-<p>  &gt;&gt;&gt;&gt;&gt;&gt;Connection&gt;&gt;&gt;&gt;&gt;&gt; | Windows / Mac with VM |<br />  :--- | :--- |<br />  <code>Che_Server =&gt; Docker_Daemon</code> |<br />  <code>Che_Server =&gt; Workspace</code><br/><br/><code>Browser =&gt; Workspace</code> |<br />  <code>Workspace_Agent --&gt; Che_Server</code> | There's a mandatory property machine.docker.che_api.endpoint with a default value of <code>http://che-host:${SERVER_PORT}/wsmaster/api</code>. You can override <code>che-host</code> with your own IP address that points to the Che server.</p>
+<p>|	&gt;&gt;&gt;&gt;&gt;&gt;Connection&gt;&gt;&gt;&gt;&gt;&gt;	|	Windows / Mac with VM	|
+|	:---	|	:---	|
+|	<code>Che_Server =&gt; Docker_Daemon</code>	|	&lt;ul/&gt; 1. Use the value of <code>docker.client.daemon_url</code>. <br /><br /> 2. Else use the <code>DOCKER_HOST</code> environment variable. If <code>DOCKER_HOST</code> value is malformed, catch <code>URISyntaxException</code> and use the default <code>https://192.168.99.100:2376</code>.<br /><br /> 3. Else uses default value: <code>https://192.168.99.100:2376</code>	|
+|	<code>Che_Server =&gt; Workspace</code><br /><br /><code>Browser =&gt; Workspace</code>	|	&lt;ul /&gt; 1. Use the value of <code>machine.docker.local_node_host</code>. <br /><br /> 2. Else if there is <code>CHE_DOCKER_MACHINE_HOST</code> use the provided value Else get value retrieved from URI that Che server uses to connect to Docker (<code>DOCKER_HOST</code>). <br /><br /> 3. Else if <code>DOCKER_HOST</code> has not been exported, then return IP address of VM running Docker.	|
+|	<code>Workspace_Agent --&gt; Che_Server</code>	|	There's a mandatory property machine.docker.che_api.endpoint with a default value of <code>http://che-host:${SERVER_PORT}/wsmaster/api</code>. You can override <code>che-host</code> with your own IP address that points to the Che server. &lt;ul/&gt; <br /><br /> 1. If <code>che-host</code> is not overridden, Che replaces <code>che-host</code> with the bridged IP address of the VM IP (using <code>DOCKER_HOST</code> environment variable). <br /><br /> 2. If this bridged IP is unavailable, then <code>che-host</code> is replaced with <code>192.168.99.1</code>. <br /><br /> 3. Else, if there is a failure, we will print an HTTP connection exception with the reason for the failure.	|</p>
+
 <h2 id="native-docker-for-che-native-docker-for-workspaces"><em>Native Docker for Che, Native Docker for Workspaces</em></h2>
-<table>
-<colgroup>
-<col width="13%" />
-</colgroup>
-<thead>
-<tr class="header">
-<th align="left">This is a Linux-only configuration. In this configuration, the Che server runs in its own Docker container and each workspace gets its own Docker container. All containers are managed by the same Docker daemon, making them siblings of each other. This configuration is largely identical to running Che natively on Linux. <img src="https://files.readme.io/JYahQlET8StJXQ83AqUK_Capture.PNG" alt="Native Docker for Che, Native Docker for Workspaces" /> ## <em>VM Docker for Che, VM Docker for Workspaces</em></th>
-</tr>
-</thead>
-<tbody>
-<tr class="odd">
-<td align="left">This configuration will work for any operating system. This is the configuration that is mandatory if you want to run Che as a Docker container on Windows or MacOS. In this case, both Che and all workspaces are run as containers within a VM that is created by VirtualBox and <code>docker-machine</code>. Your browser clients initially connect to the <code>vm-ip</code>, but then the VM and Docker daemon are responsible for the rest of the routing configurations.</td>
-</tr>
-<tr class="even">
-<td align="left"><img src="https://files.readme.io/74osKA8CRBidz1IPE6pj_Capture.PNG" alt="VM Docker for Che, VM Docker for Workspaces" /></td>
-</tr>
-<tr class="odd">
-<td align="left">## <em>WebSockets</em></td>
-</tr>
-</tbody>
-</table>
+
+<hr />
+<p>This is a Linux-only configuration. In this configuration, the Che server runs in its own Docker container and each workspace gets its own Docker container. All containers are managed by the same Docker daemon, making them siblings of each other. This configuration is largely identical to running Che natively on Linux.</p>
+
+<p><img src="https://files.readme.io/JYahQlET8StJXQ83AqUK_Capture.PNG" alt="Native Docker for Che, Native Docker for Workspaces" /></p>
+
+<h2 id="vm-docker-for-che-vm-docker-for-workspaces"><em>VM Docker for Che, VM Docker for Workspaces</em></h2>
+
+<hr />
+<p>This configuration will work for any operating system. This is the configuration that is mandatory if you want to run Che as a Docker container on Windows or MacOS. In this case, both Che and all workspaces are run as containers within a VM that is created by VirtualBox and <code>docker-machine</code>. Your browser clients initially connect to the <code>vm-ip</code>, but then the VM and Docker daemon are responsible for the rest of the routing configurations.</p>
+
+<p><img src="https://files.readme.io/74osKA8CRBidz1IPE6pj_Capture.PNG" alt="VM Docker for Che, VM Docker for Workspaces" /></p>
+
+<h2 id="websockets"><em>WebSockets</em></h2>
+
+<hr />
 <p>Che heavily relies on WebSocket communications. When a browser client connects to a workspace, it connects to it through WebSockets. Inside the workspace, the workspace agent also uses WebSockets to connect back to the Che server.</p>
+
 <p>If WebSockets are blocked or not supported in the network, the workspace startup will fail with an error.</p>
