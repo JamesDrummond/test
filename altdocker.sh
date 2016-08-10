@@ -1,8 +1,9 @@
 #!/bin/sh
 ## name: altdocker.sh
+mkdir /projects/.docker  
 set -e -x
 : ${bridge=altdocker}
-: ${base=$HOME/$bridge}
+: ${base=/projects/.docker/$bridge}
 # Set up bridge network:
 if ! ip link show $bridge > /dev/null 2>&1
 then
