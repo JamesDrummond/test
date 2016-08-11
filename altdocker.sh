@@ -12,8 +12,9 @@ then
    sudo ip link set dev $bridge up
 fi
 sudo docker daemon \
+  -s aufs \
   --bridge=$bridge \
   --exec-root=$base.exec \
   --graph=$base.graph \
-  --host=unix://$base.socket \
+  --host=unix:///var/run/docker.sock \
   --pidfile=$base.pid

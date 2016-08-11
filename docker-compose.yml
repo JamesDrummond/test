@@ -1,0 +1,5 @@
+my-test:
+      image: codenvy/ubuntu_jdk8
+      volumes:
+         - /projects/test:/test
+      command: java /test/HelloWorld
