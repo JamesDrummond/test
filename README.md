@@ -1,4 +1,4 @@
-### Configuration: Networking
+#### Configuration: Networking
 #### *An administrator's guide to configuring Che in various networking scenarios.*
 
 ----------
