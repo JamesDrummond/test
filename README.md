@@ -1,132 +1,308 @@
-####### Configuration: Networking
-#### *An administrator's guide to configuring Che in various networking scenarios.*
+---
+title: "Introduction"
+excerpt: ""
+---
+Eclipse Che provides:
 
-----------
-Eclipse Che is making connections between three essential entities: the browser, the Che server, and a machine which is typically running a Docker container. There are configuration steps that you must take if these services are distributed, or you want to run them on IP addresses that do not have external public access.
+* Workspaces that include runtimes and IDEs
+* RESTful workspace server
+* A browser-based IDE
+* Plug-ins for languages, framework, and tools
+* An SDK for creating plug-ins and assemblies
+[block:api-header]
+{
+  "type": "basic",
+  "title": "Getting Started"
+}
+[/block]
+You can get started with Che by:
+- [Installing it locally](doc:che-getting-started) 
+- [Creating a hosted SaaS account](doc:getting-started-saas-cloud) 
+- [Installing it in a cloud instance you control](doc:usage-bitnami) 
+[block:api-header]
+{
+  "type": "basic",
+  "title": "Workspace Model"
+}
+[/block]
 
-Generally, if the browser client that is accessing Che and the workspaces that it are connecting to are both on `localhost`, then the Che startup scripts configure everything for the user. You will need to reconfigure Che with certain properties to support it running behind a firewall or in a hosted scenario.
+[block:image]
+{
+  "images": [
+    {
+      "image": [
+        "https://files.readme.io/aaqJI51xQtanQW4gbXhN_Docker%20--%20Codenvy%20Meeting.png",
+        "Docker -- Codenvy Meeting.png",
+        "960",
+        "540",
+        "#2c2c4c",
+        ""
+      ],
+      "sizing": "smart"
+    }
+  ]
+}
+[/block]
+Che defines the workspace to be the project code files and all of their dependencies necessary to edit, build, run, and debug them. In our world, we treat the IDE and the development runtime as a dependency of the workspace. These items are embedded and included with the workspace, whereever it may run. This compares to classic workspace definitions which may include the project code, but require the developer to bind their IDE and use their laptop localhost to provide a runtime.
 
-This guide is a companion to [Configuration: Che as a Server](https://eclipse-che.readme.io/v4.4/docs/che-as-a-server) which walks through the items that you must configure step by step to verify Che operates in a hosted capacity.
+Each workspace is isolated from one another and is responsible for managing the lifecycle of the components that are contained within it.
+[block:image]
+{
+  "images": [
+    {
+      "image": [
+        "https://files.readme.io/fb7LsRaRRpK2m8bKEjMz_Docker%20--%20Codenvy%20Meeting%20(1).png",
+        "Docker -- Codenvy Meeting (1).png",
+        "960",
+        "540",
+        "#068cb9",
+        ""
+      ]
+    }
+  ]
+}
+[/block]
+A workspace contains one or more runtimes. The default runtime within our workspaces are Docker containers, but these runtimes can be replaced with other types of "machines" that offer different characteristics. We, for example, provide an SSH machine type and will soon provide localhost machines. The advantage of Docker as the runtime type allows users to define the contents of their runtime using Dockerfiles, for which we can then dynamically construct workspace runtimes without the user having to learn a lot of complex Docker syntax.
+[block:image]
+{
+  "images": [
+    {
+      "image": [
+        "https://files.readme.io/dHeS9QR9Q32HbFn0g7g7_Docker%20--%20Codenvy%20Meeting%20(2).png",
+        "Docker -- Codenvy Meeting (2).png",
+        "960",
+        "540",
+        "#7ab76e",
+        ""
+      ]
+    }
+  ]
+}
+[/block]
+A workspace can have 0..n projects, with each project mapping to 0..1 remote version control repositories such as git, subversion, or mercurial. Projects are mounted into the workspace, so that they are available both inside of the workspace and also available on long term storage. Each project has a "type", such as "maven", which when selected will activate a series of plugins that alter the behavior of the workspace to accommodate that project type. Projects can have different types and they can also have modules which are sub-portions of a project that have their own typing and behaviors.
+[block:image]
+{
+  "images": [
+    {
+      "image": [
+        "https://files.readme.io/iLSMQuzSLqmhoufele84_Docker%20--%20Codenvy%20Meeting%20(3).png",
+        "Docker -- Codenvy Meeting (3).png",
+        "960",
+        "540",
+        "#7ab76e",
+        ""
+      ]
+    }
+  ]
+}
+[/block]
+Each workspace has its own private browser IDE hosted within it. The browser IDE provided by Che is packaged as JavaScript and CSS, but our IDE could be replaced with other IDEs. Since each workspace has its own server runtimes, each workspace can have a customized IDE with different plugins packaged within it.
+[block:image]
+{
+  "images": [
+    {
+      "image": [
+        "https://files.readme.io/BR6LbugPT2CjvT5vy26L_Docker%20--%20Codenvy%20Meeting%20(4).png",
+        "Docker -- Codenvy Meeting (4).png",
+        "960",
+        "540",
+        "#79b76e",
+        ""
+      ]
+    }
+  ]
+}
+[/block]
+By default, each workspace also configures its own SSH server.  This allows remote clients and desktop IDEs to SSH mount into the workspace. By SSH mounting, you can let IDEs like IntelliJ or Eclipse work with the projects and runtimes contained within Che.
+[block:image]
+{
+  "images": [
+    {
+      "image": [
+        "https://files.readme.io/KJiS6afARMuIKsLIWlO7_Docker%20--%20Codenvy%20Meeting%20(5).png",
+        "Docker -- Codenvy Meeting (5).png",
+        "960",
+        "540",
+        "#72b37d",
+        ""
+      ]
+    }
+  ]
+}
+[/block]
+Workspaces are hosted in the Che server, which is a lightweight runtime for managing workspaces. A single Che server can manage large volumes of workspaces, which themselves may or may not be running on the same host. Since Che workspace runtimes have their own runtimes, each workspace can be running on the same host or another host, managed by a docker daemon.  The Che server is also a Docker container by default, which itself could be operated by compose or Swarm.
+[block:image]
+{
+  "images": [
+    {
+      "image": [
+        "https://files.readme.io/Krfmrv9xT5uxejt7dsVp_Docker%20--%20Codenvy%20Meeting%20(6).png",
+        "Docker -- Codenvy Meeting (6).png",
+        "960",
+        "540",
+        "#79b76c",
+        ""
+      ]
+    }
+  ]
+}
+[/block]
+Since the workspaces are servers that have their own runtimes, they are collaborative and shareable. This allows multiple users to access the same workspace at the same time. Each workspace has its own unique URL which allows multi-user access.  We currently support multiple users within a single workspace on a last-write-wins policy. Before the end of 2016, we'll have multi-cursor editing using an operational transform.
+[block:image]
+{
+  "images": [
+    {
+      "image": [
+        "https://files.readme.io/6LbFq9ZiRuWzUHNqtwvz_Docker%20--%20Codenvy%20Meeting%20(7).png",
+        "Docker -- Codenvy Meeting (7).png",
+        "960",
+        "540",
+        "#76b473",
+        ""
+      ]
+    }
+  ]
+}
+[/block]
+Each workspace is defined with a JSON data model that contains the definition of its projects, its runtimes, its IDE, and other necessary information that allows a Che server to create replicas. This allows workspaces to move from one location to another, such as from one Che server to another Che server.  You will never have the "but it runs on that computer" issue again.  Workspaces can also have their internal state snapshot and saved in a registry, so replicas can be created from the original template, or from images that contain modifications made after a user started working with the workspace.
+[block:image]
+{
+  "images": [
+    {
+      "image": [
+        "https://files.readme.io/chOQqa2Rme6VEZ4GN52g_Docker%20--%20Codenvy%20Meeting%20(8).png",
+        "Docker -- Codenvy Meeting (8).png",
+        "960",
+        "540",
+        "#75b372",
+        ""
+      ]
+    }
+  ]
+}
+[/block]
+Both the Che server and each workspace have their own embedded RESTful APIs. Everything that is done by the user dashboard Web application and the browser IDE is done over RESTful APIs. You can access these APIs using swagger as Swagger configurations are provided within each service. The API set within the server and each workspace dynamically changes based upon the plugins that have been deployed by the admin or the user.
+[block:api-header]
+{
+  "type": "basic",
+  "title": "Users"
+}
+[/block]
+Che has three types of users:
+  * **Developers**. Che can be installed and used as a local IDE for any kind of programming language or framework, such as Java and JavaScript. While Che runs as a server, it can be run on a desktop, server, or within an embedded device. You can use Che with our embedded browser IDE or your existing IDE which is allowed to SSH into the Che workspaces.  
 
-This networking guide is provided as a specification. This page is a companion to the:
+  * **Product Owners**. Che provides APIs hosted within its workspace server to manage environments, workspaces, projects, templates, stacks, and intellisense for developer activities such as editing, syntax analysis, compiling, packaging, and debugging. You can use Che to host on-demand workspaces accessed by the Che IDE or a client that your product team authors. For example, SAP uses the Che workspace server to embed its development tools for SAP Hana.
 
-## *Four Deployment Configurations*
-There are four basic configurations in which you can deploy Che.
+  * **Plug-in Providers**. Che provides a SDK to create and package plug-ins that modify the browser IDE, workspaces, or the Che server. ISVs and tool providers can add new project types, programming languages, tooling extensions, or applications. Che plug-ins can be authored for the client-side IDE or the server-side.  
 
-|	Che?	|	Workspaces?	|	OS	|	Description	|
-|	:---	|	:---	|	:---	|	:---	|
-|	Native Process	|	Native Docker	|	Linux	|	The Che app server runs as a native process on your node. Workspaces are generated as Docker containers. The Docker daemon is running on the same node. The Che app server and Docker container may have different IP addresses on the same node.<br/><br/>The default settings of the Che boot scripts on Linux assume this configuration.	|
-|	Native Process	|	VM Docker	|	Any	|	Since Docker is not natively supported on many operating systems, you can launch a VM running a boot2docker ISO that provides an OS for Docker containers.<br/><br/>The Che app server runs as a native process on your node. Worskpaces are generated using Docker that is running inside a VM. There can be up to three IP addresses: the Che server, the VM, and the container.<br/><br/>The default settings of the Che boot scripts on Mac and Windows assume this configuration.	|
-|	Native Docker	|	Native Docker	|	Linux	|	You can run Che inside of a Docker container, which itself is independently started and stopped. The workspaces created by Che are created using the same Docker daemon and created as sibling containers.	|
-|	VM Docker	|	VM Docker	|	Any	|	Same as the previous configuration, but all Docker containers are created by the Docker daemon running within the VM.	|
+Che is supported by engineers from Bitnami, Codenvy, SAP, IBM, Serli, Red Hat, Tomitribe,and WSO2.  [Codenvy](http://codenvy.com) provides a multi-tenant, multi-user infrastructure for Che with enhanced security and deployable on any public or private cloud. 
+[block:api-header]
+{
+  "type": "basic",
+  "title": "Logical Architecture"
+}
+[/block]
 
-## *Native Process for Che, Native Docker for Workspaces*
+[block:image]
+{
+  "images": [
+    {
+      "image": [
+        "https://files.readme.io/L1H81xsQji1Tq1G6VifQ_Capture.PNG",
+        "Capture.PNG",
+        "2179",
+        "1092",
+        "#1c345c",
+        ""
+      ],
+      "caption": "Overview of Eclipse Che architecture."
+    }
+  ]
+}
+[/block]
+Che is a workspace server that runs on top of an application server like Tomcat. When the Che server is launched, the IDE is loaded as a Web application accessible via a browser at `http://localhost:8080/`. The browser downloads the IDE as a single page web app from the Che server.  The Web application provides UI components such as wizards, panels, editors, menus, toolbars, and dialog boxes.
 
+As a user interacts with the Web application, they will create workspaces, projects, environments, machines, and other artifacts necessary to code and debug a project. The IDE communicates with Che over RESTful APIs that manage and interact with a Workspace Master. 
 
-----------
-This is a Linux-only configuration. The Che scripts on Linux assume that this is the default configuration and do not require any command-line parameters to launch Che with this configuration.
+The Che server controls the lifecycle of workspaces. Workspaces are isolated spaces where developers can work. Che injects various services into each workspace, including the projects, source code, Che plug-ins, SSH daemon, and language services such as JDT core Intellisense to provide refactoring for Java language projects. The workspace also contains a synchronizer which, depending upon whether the workspace is running locally or remotely, is responsible for synchronizing project files from within the machine with Che long term storage.
+[block:image]
+{
+  "images": [
+    {
+      "image": [
+        "https://files.readme.io/meY4wKw0TrmqRauyWZi8_Capture2.PNG",
+        "Capture2.PNG",
+        "2188",
+        "1099",
+        "#1c345b",
+        ""
+      ]
+    }
+  ]
+}
+[/block]
+Che defines the notion of a workspace as the combination of projects, environments, and commands.  A project is the fundamental unit of code available as a set of folders, files, and modules. A project may be mapped 1:1 to an external git or subversion repository from which it is cloned. A workspace may have zero or more projects. Projects have a project type which, depending upon the type selected, causes Che to enable the workspace with different behaviors. For example, a maven project type causes Che to install the maven and Java plug-ins into the workspace.
 
-![Native Process for Che, Native Docker for Workspaces](https://files.readme.io/ZF7vFCWkRcmOKxL9mMCF_Capture.PNG)
+A machine is a runtime unit that provides a stack of software and a set of resources to run the projects of the workspace. The machine is bound to to the workspace and to the projects. Che synchronizes the project files within the machine. A machine is defined by a recipe that contains the list of software that should be executing within the machine. The default machine implementation in Che is Docker and we use Dockerfiles to define the recipes for different types of runtimes. We also have a concept called, "stacks" which are pre-defined recipes with additional meta-information. Che provides default recipes and stacks, but users can define their own.  The machine's lifecycle is managed by each Che workspace. As the workspace is booted, so is its underlying runtimes.  Additionally, Che can install additional software into the machine to enable developer services such as Intellisense.  For example, if the Java plug-in is activated because of the project type, Che installs an agent inside of the machine that runs JDT services that are then accessible by the projects synchronized onto the machine.
+[block:api-header]
+{
+  "type": "basic",
+  "title": "Extensibility"
+}
+[/block]
+Che provides an SDK for authoring new extensions, packaging extensions into plug-ins, and grouping plug-ins into an assembly. An assembly can either be executed stand alone as a new server, or, it can be installed onto desktops as an application using included installers.
+[block:image]
+{
+  "images": [
+    {
+      "image": [
+        "https://files.readme.io/soVhX9MmRR6SsGi78WsI_Extensibility.PNG",
+        "Extensibility.PNG",
+        "1177",
+        "480",
+        "#243c6b",
+        ""
+      ],
+      "caption": "Eclipse Che extensibility - how extensions become plugins become assemblies."
+    }
+  ]
+}
+[/block]
+There are a number of aspects that can be modified within Che.
+[block:parameters]
+{
+  "data": {
+    "h-0": "Type",
+    "h-1": "Description",
+    "0-0": "IDE Extension",
+    "0-1": "Modify the look-and-feel, panels, editors, wizards, menus, toolbars, and pop-up boxes of the client. IDE extensions are authored in Java and transpiled into a JavaScript Web application that is hosted on the Che server as a WAR file.",
+    "1-0": "Che Server Extension\n(aka, Worskspace Master)",
+    "1-1": "Add or modify the core APIs that run within the Che server for managing workspaces, environments and machines. Workspace extensions are authored in Java and packaged as JAR files.",
+    "2-0": "Workspace Extension\n(aka, Workspace Agent)",
+    "2-1": "Create or modify project-specific extensions that run within a workspace machine and have local access to project files. Define machine behaviors, code templates, command instructions, scaffolding commands, and intellisense. The Che Java extension is authored as a workspace agent extension, deployed into the machine, and runs JDT core services from Eclipse to do local intellisense operations against the remote workspace."
+  },
+  "cols": 2,
+  "rows": 3
+}
+[/block]
+Each extension type is packaged separately because they are deployed differently into the assembly. IDE extensions are transpiled using GWT to generate a cross-browser JavaScript. This application is packaged as a WAR file and hosted on the Che server. 
 
-The browser client initiates communication with the Che Server by connecting to `che-ip`. This IP address must be accessible by your browser clients. Internally, Che runs on Tomcat which is bound to port `8080`. This port can be altered by using the `--port:<port>` command line option.
+Workspace master extensions are deployed as services within the Che server. Once deployed, they activate new management services that can control users, identity and workspaces.
 
-At some point, a user creates a workspace, which will have Che connect to the Docker daemon at `docker-ip` and has that daemon launch a machine. The machine is bound to a Docker container running on some Docker-configured IP address, `workspace-ip`. The `workspace-ip` must also be reachable by your browser host.
-
-> IP Reachability
->If your browser clients cannot connect to both `che-ip` and `workspace-ip`, then you get errors from your browser when they either first connect to Che, or after a new workspace has been created by Che and when the browser requests to open the IDE for that workspace. We provide helpful error messages within the dashboard and workspace if we think this connectivity issue may be occurring.
-
-## *PORTS*
-Inside of your workspace machine powered by Docker, Che launches and exposes an application server on port `4401` and `4403`. We also have our default Docker images configured to launch an SSH daemon on port `22`. The embedded JavaScript terminal which is reachable over Web sockets runs on port `4411`. Your custom stacks and images (configured in the dashboard) may expose additional services on different ports.
-
-Docker uses ephemeral port mapping. The ports accessible to your clients start at port `32768` and go through a wide range. When we start services internal to Docker, they are mapped to one of these ports. It is these ports that the browser (or SSH) clients connect to, and would need to be opened if connecting through a firewall.
-
-Additionally, if your users start services within their workspace that expose their own ports, then those ports need to have an `EXPOSE <port>` command added to the workspace image Dockerfile. As a courtesy, we expose port `80` and `8080` within the container for any users that want to launch services on those ports.
-
-## *DOCKER CONNECTION*
-
-
-----------
-
-
-There are multiple techniques for connecting to Docker including Unix sockets, localhost, and remote connections over TCP protocol. Depending upon the type of connection you require and the location of the machine node running Docker, we use different parameters.
-
-### *Che Connections*
-
-|	\>>>>>>Connection>>>>>>	|	Linux	|
-|	:---	|	:---	|
-|	`Che Server => Docker Daemon`	|	<ul> 1. Use the value of `docker.client.daemon_url`. <br/><br/> 2. Else use the value of `DOCKER_HOST` environment variable. If `DOCKER_HOST` value is malformed, Che falls back to`unix:///var/run/docker.sock`. <br/><br/> 3. Else use Unix socket: `unix:///var/run/docker.sock`	|
-|	`Che Server => Workspace` <br/><br/> `Browser => Workspace`	|	<ul> 1. Use the value of `machine.docker.local_node_host`.  <br/><br/> 2. Else use the value of `CHE_DOCKER_MACHINE_HOST` environment variable. <br/><br/> 3. Else if server connects to Docker via Unix socket then use `localhost`.  <br/><br/> 4. Else get value retrieved from URI that Che server uses to connect to Docker (`DOCKER_HOST`).	|
-|	`Workspace Agent => Che Server	` |	There's a mandatory property `machine.docker.che_api.endpoint` with a default value of `http://che-host:${SERVER_PORT}/wsmaster/api`. You can override `che-host` with your own IP address that points to the Che server.<ul> <br/><br/> <li> 1. If `che-host` is not overridden, Che replaces `che-host` with the IP of `docker0` network interface. <br/><br/> 2. If `docker0` IP is unreachable, then `che-host` is replaced with `172.17.42.1`. <br/><br/> 3. Else, if there is a failure, we will print an HTTP connection exception with the reason for the failure. </ul>	|
-
-
-You can set the `CHE_DOCKER_MACHINE_HOST` environment variable by exporting the variable in your Linux configuration or on the Che command line with `--remote:ip` option.
-
-Properties are added and changed in `${CHE_LOCAL_CONF_DIR}/che.properties`
-
-### *Firewall*
-On Linux, a firewall may block inbound connections from within Docker containers to your localhost network. As a result, the workspace agent is unable to ping the Che server. You can check for the firewall and then disable it.
-
-[Shell](https://eclipse-che.readme.io/v4.4/docs/che-as-a-server)
-``` bash
-# Check firewall status
-sudo ufw status
-
-# Disable firewall
-sudo ufw disable
-
-# Allow 8080 port of Che server
-sudo ufw allow 8080/tcp
-```
-
-
-
-## *Native Process for Che, VM Docker for Workspaces*
-
-
-----------
-
-
-You can run Docker in a VM and enable Che to create workspaces using the embedded Docker daemon. If you are on Linux, this is optional. If you are on OSX or Windows, this is mandatory as Docker is not yet supported natively on those operating systems. We use VirtualBox to launch and manage VMs that run a special operating system optimized for executing Docker containers. This VM type is called `boot2docker` and it is maintained by the Docker community. `docker-machine` is a command line utility to simplify the creation and destruction of VMs that have `boot2docker`.
-
-![Native Process for Che, VM Docker for Workspaces](https://files.readme.io/PqblnAS2S4GOVu8vy6oJ_Capture.PNG)
-
-This configuration introduces a third IP addresses, `vm-ip`, which is the externally accessible IP address of the VM that has the Docker daemon. Your browser clients communicate to `vm-ip` in this configuration, not `workspace-ip`.
-
-On Windows and Mac, the default configuration of the Che startup scripts:
-
-1. Uses `docker-machine` to create a VM named `default`.
-2. Sets the `vm-ip` to your environment variables.
-3. Launches Che with `CHE_DOCKER_MACHINE_HOST` set to `vm-ip`.
-
-### *Che Connections*
-|	\>>>>>>Connection>>>>>>	|	Windows / Mac with VM	|
-|	:---	|	:---	|
-|	`Che_Server => Docker_Daemon`	|	<ul/> 1. Use the value of `docker.client.daemon_url`. <br/><br/> 2. Else use the `DOCKER_HOST` environment variable. If `DOCKER_HOST` value is malformed, catch `URISyntaxException` and use the default `https://192.168.99.100:2376`.<br/><br/> 3. Else uses default value: `https://192.168.99.100:2376`	|
-|	`Che_Server => Workspace`<br/><br/>`Browser => Workspace`	|	<ul /> 1. Use the value of `machine.docker.local_node_host`. <br/><br/> 2. Else if there is `CHE_DOCKER_MACHINE_HOST` use the provided value Else get value retrieved from URI that Che server uses to connect to Docker (`DOCKER_HOST`). <br/><br/> 3. Else if `DOCKER_HOST` has not been exported, then return IP address of VM running Docker.	|
-|	`Workspace_Agent --> Che_Server`	|	There's a mandatory property machine.docker.che_api.endpoint with a default value of `http://che-host:${SERVER_PORT}/wsmaster/api`. You can override `che-host` with your own IP address that points to the Che server. <ul/> <br/><br/> 1. If `che-host` is not overridden, Che replaces `che-host` with the bridged IP address of the VM IP (using `DOCKER_HOST` environment variable). <br/><br/> 2. If this bridged IP is unavailable, then `che-host` is replaced with `192.168.99.1`. <br/><br/> 3. Else, if there is a failure, we will print an HTTP connection exception with the reason for the failure.	|
-|		|		|
-
-## *Native Docker for Che, Native Docker for Workspaces*
-
-
-----------
-This is a Linux-only configuration. In this configuration, the Che server runs in its own Docker container and each workspace gets its own Docker container. All containers are managed by the same Docker daemon, making them siblings of each other. This configuration is largely identical to running Che natively on Linux.
-
-![Native Docker for Che, Native Docker for Workspaces](https://files.readme.io/JYahQlET8StJXQ83AqUK_Capture.PNG)
-
-## *VM Docker for Che, VM Docker for Workspaces*
-
-
-----------
-This configuration will work for any operating system. This is the configuration that is mandatory if you want to run Che as a Docker container on Windows or MacOS. In this case, both Che and all workspaces are run as containers within a VM that is created by VirtualBox and `docker-machine`. Your browser clients initially connect to the `vm-ip`, but then the VM and Docker daemon are responsible for the rest of the routing configurations.
-
-![VM Docker for Che, VM Docker for Workspaces](https://files.readme.io/74osKA8CRBidz1IPE6pj_Capture.PNG)
-
-
-## *WebSockets*
-
-
-----------
-Che heavily relies on WebSocket communications. When a browser client connects to a workspace, it connects to it through WebSockets. Inside the workspace, the workspace agent also uses WebSockets to connect back to the Che server.
-
-If WebSockets are blocked or not supported in the network, the workspace startup will fail with an error.
+Workspace agent extensions are compiled with Che core libraries and also deployed within an embedded Che server that runs inside of each workspace machine. The Che server is injected into machines created and controlled by the central workspace master Che server. This embedded server hosts your workspace agent extensions and provides a communication bridge between the services hosted within Che and the machines that are hosting the project. 
+  
+**About Machines**. When you develop with a desktop IDE, the workspace uses localhost as the execution environment for processes like build, run and debug. In a cloud IDE, localhost is not available, so the workspace server must generate the environments that it needs. These environments must be isolated from one another and scalable. We use Docker to generate containers that contain the software needed for each environment. Each workspace is given at least one environment, but users may create additional environments for each workspace if they want. Each container can have different software installed. Che installs different software into the machine based upon the project type. For example, a Java project will have the JDK, Git, and Maven installed.  When a user is working within their Workspace, this container is booted by Che and the source code of the project is mounted within it. Developer actions like auto-complete and `mvn clean install` are processes that are executed within the container. Users can provide their own Dockerfiles that Che will build into images and extension developers can register Dockerfile templates associated with a project type.  This allows Che to manage a potentially infinite number of environments while still giving users customization flexibility.
+[block:api-header]
+{
+  "type": "basic",
+  "title": "What's Included"
+}
+[/block]
+Che ships with a large number of plug-ins for many programming languages, build systems, source code tools, and infrastructure including Java, Maven, Ant, Git, Subversion, JavaScript, and Angular.JS. The community is developing their own and many are merged into the main Che repository. Che can be installed on any operating system that supports Docker 1.8+ or Java 1.8 – desktop, server or cloud and has been tested on Linux, MacOS and Windows. It is licensed as EPL 1.0.
+[block:api-header]
+{
+  "type": "basic",
+  "title": "Getting Started"
+}
+[/block]
+We provide a [step-by-step guide](http://eclipse.org/che/getting-started/) for getting Che running on your desktop or server.
