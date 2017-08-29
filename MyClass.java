@@ -12,11 +12,11 @@ public class MyClass
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!--  end-user-doc  -->
-	 * @generated
+	 * @generated NOT
 	 * @ordered
 	 */
 	
-	public String attribute;
+	public String attribute = "test";
 	
 	/**
 	 * <!-- begin-user-doc -->
