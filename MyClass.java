@@ -21,7 +21,7 @@ public class MyClass
 	/**
 	 * <!-- begin-user-doc -->
 	 * <!--  end-user-doc  -->
-	 * @generated
+	 * @generated NOT
 	 */
 	public MyClass(){
 		super();
